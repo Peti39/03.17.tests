@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PrismaService } from 'src/prisma.service';
 import { getClient } from '@pkgverse/prismock';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
-let mockedClient = await getClient({
+const mockedClient = await getClient({
   prismaClient: PrismaService,
   schemaPath: 'prisma/schema.prisma',
 });
@@ -34,6 +38,7 @@ describe('UsersService', () => {
       await mockedClient.user.create({
         data: {
           email: 'user1',
+
         },
       });
       await mockedClient.user.create({
@@ -57,6 +62,76 @@ describe('UsersService', () => {
       expect(users).toEqual([]);
     });
   });
+
+  describe('ban', () =>{
+    it('should ban user', async () =>{
+      const user = await mockedClient.user.create({
+        data: {
+          email: 'user1',
+        },
+      });
+      await service.ban(user.id)
+      const userBanned = await mockedClient.user.findUnique({
+        where:{
+          id: user.id
+        }
+        })
+      expect(userBanned).toEqual(
+        {
+          id: 1,
+          email: 'user1',
+          banned: true,
+        }
+      )
+    })
+    it('should throw error',() =>{
+      
+      expect(async () => {await service.ban(1)}).rejects.toThrow(NotFoundException)
+      
+    })
+  })
+
+  describe('FindOne', ()=>{
+    it('should return the user', async () =>{
+      const user = await mockedClient.user.create({
+        data:{
+          email: 'user1',
+        }
+      })
+      const resp = await service.findOne(user.id)
+      expect(resp).toEqual(user)
+    })
+    it('should throw user not found',  () =>{
+      
+      expect(async ()=> await service.findOne(2)).rejects.toThrow(NotFoundException)
+    })
+    it('should throw user is banned', async () =>{
+      const user = await mockedClient.user.create({
+        data:{
+          email: 'user1',
+          banned: true
+        }
+      })
+      expect(async ()=> await service.findOne(user.id)).rejects.toThrow(ForbiddenException)
+    })
+  })
+
+  describe('remove', () =>{
+    it('should remove user', async () =>{
+      const user = await mockedClient.user.create({
+        data:{
+          email: 'user1',
+        }
+      })
+      await service.remove(user.id)
+      const users = await mockedClient.user.findMany()
+      expect(users).toEqual([])
+    })
+    it('should throw user not found',  () =>{
+      
+      expect(async ()=> await service.remove(2)).rejects.toThrow(NotFoundException)
+    })
+  })
 
   describe('update', () => {
     it('should update the user if not banned', async () => {

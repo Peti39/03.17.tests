@@ -1,3 +1,8 @@
 {
-    "prisma.pinToPrisma6": true
+    "prisma.pinToPrisma6": true,
+    "vitest.enable": true,
+    "vitest.commandLine": "npx vitest",
+    "jest.disabledWorkspaceFolders": ["nestjs-unit-testing"]
 }
+ 
+ 
