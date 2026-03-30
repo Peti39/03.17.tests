@@ -1,0 +1,8 @@
+npm i vitest
+
+npm i vite-tsconfig-paths
+
+vitest.config.ts
+import { defineConfig } from "vitest/config";
+
+npm add --save-dev @pkgverse/prismock
